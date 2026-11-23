@@ -172,7 +172,7 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
             sig_temp =sig(comps,:);
 
             % 1. Number of Eye peaks 
-            num_peaks_in_window = sc_eyePeaks(sig_temp,Fs,rc);
+            num_peaks_in_window = sc_eyePeaks_comp(sig_temp,Fs,rc);
             peaks_per_min(comps) = sum(num_peaks_in_window)/(nTica/(60*Fs));
 
             % 2. Fooof Features
@@ -704,7 +704,7 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
 
                 % 1. Number of Eye peaks 
                 sig_temp =ICA.iter(it).IC_sig(comp,:);
-                num_peaks_in_window = sc_eyePeaks(sig_temp,Fs,rc);
+                num_peaks_in_window = sc_eyePeaks_comp(sig_temp,Fs,rc);
                 bestIter_eyePeaks(comp) =  sum(num_peaks_in_window)/(nTica/(60*Fs));
 
     
