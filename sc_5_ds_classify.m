@@ -82,10 +82,24 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
         
     %%% Get main data:
     Fs          = data_ica2.hdr.Fs;
-  nTica       = length(data_ica2.ica_par.time_ica);
-  trialLength = size(data_ica2.trial{1}, 2);
-  elcFile     = fullfile(char(trim_folder),'ch_trimmed.elc');
-  ori         = chan.ori;
+      nTica       = length(data_ica2.ica_par.time_ica);
+      trialLength = size(data_ica2.trial{1}, 2);
+      elcFile     = fullfile(char(trim_folder),'ch_trimmed.elc');
+      ori         = chan.ori;
+
+    %%% Check toolbox availability and reconfigure functions if necessery:
+    hasSPT = license('test','Signal_Toolbox') && ~isempty(ver('signal'));
+    hasDL = license('test','Neural_Network_Toolbox') && ~isempty(ver('nnet'));
+
+      if ispc % Whether windows or Linux
+          foofExe = fullfile(rc.asctdir, 'compiled', 'sc_foofEstim_exec.exe');
+          dlExe = fullfile(rc.asctdir, 'compiled', 'sc_classifyPredict.sh');
+          featExe = fullfile(rc.asctdir, 'compiled', 'sc_features_exec.exe');        % ispc
+      else
+          foofExe = fullfile(rc.asctdir, 'compiled', 'run_sc_foofEstim_exec.sh');
+          dlExe = fullfile(rc.asctdir, 'compiled', 'run_sc_classify_predict.sh');
+          featExe = fullfile(rc.asctdir, 'compiled', 'run_sc_features_exec.sh');     % linux
+      end
 
 
     %%% Get Iterations that interests you the most (Either All or Best) 
@@ -168,23 +182,36 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
         maxPeak = nan(1,nIC); maxProm = nan(1,nIC); maxWidth = nan(1,nIC);
         
         %%% Iterate thrtough current components
-        for comps = 1:nIC
-            sig_temp =sig(comps,:);
-
-            % 1. Number of Eye peaks 
-            num_peaks_in_window = sc_eyePeaks_comp(sig_temp,Fs,rc);
-            peaks_per_min(comps) = sum(num_peaks_in_window)/(nTica/(60*Fs));
-
-            % 2. Fooof Features
-            [pk, loc, wid, prom] = sc_foofEstim(sig_temp,trialLength,Fs); % WARNING - trialLength should possibly be changed for something different - like stable 2s window to get both high and lower freq
-            peaksNum(comps) = length(pk);
-            meanPLoc(comps) = mean(loc);
-            if ~isempty(pk)
-                maxPeak(comps)   =  max(pk);
-                maxProm(comps)   =  max(prom);
-                maxWidth(comps)  =  max(wid);
+        if hasSPT      % Using Local Functions
+            peaks_per_min = zeros(1,nIC); peaksNum = zeros(1,nIC); meanPLoc = nan(1,nIC);
+            maxPeak = nan(1,nIC); maxProm = nan(1,nIC); maxWidth = nan(1,nIC);
+            for comps = 1:nIC
+                sig_temp = sig(comps,:);
+                num_peaks_in_window = sc_eyePeaks(sig_temp,Fs);
+                peaks_per_min(comps) = sum(num_peaks_in_window)/(nTica/(60*Fs));
+                [pk, loc, wid, prom] = sc_foofEstim(sig_temp,trialLength,Fs);
+                peaksNum(comps) = length(pk);
+                meanPLoc(comps) = mean(loc);
+                if ~isempty(pk)
+                    maxPeak(comps) = max(pk);  maxProm(comps) = max(prom);  maxWidth(comps) = max(wid);
+                end
             end
+        else       % Using prepackaged in case of NO SPT
+            tmpIn  = [tempname(rc.tmpDir) '.mat'];  tmpOut = [tempname(rc.tmpDir) '.mat'];
+            save(tmpIn, 'sig', 'Fs', 'trialLength', 'nTica');
+            if ispc
+                cmd = sprintf('"%s" "%s" "%s"', featExe, tmpIn, tmpOut);
+            else
+                cmd = sprintf('GLIBC_TUNABLES=glibc.rtld.execstack=2 "%s" "%s" "%s" "%s"', featExe, matlabroot, tmpIn, tmpOut);
+            end
+            [st, msg] = system(cmd);
+            if st ~= 0, error('features exec failed:\n%s', msg); end
+            R = load(tmpOut);  delete(tmpIn, tmpOut);
+            peaks_per_min = R.peaks_per_min;  peaksNum = R.peaksNum;  meanPLoc = R.meanPLoc;
+            maxPeak = R.maxPeak;  maxProm = R.maxProm;  maxWidth = R.maxWidth;
         end
+
+
         %%%%%%%%%%%%%%%%
         if ~strcmp(Mode,'label') % For Review and Classification Modes
 
@@ -293,9 +320,33 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
             %%% Predicting:
             if isfield(rc,'classExecEnv'), execEnv = rc.classExecEnv; else, execEnv = 'cpu'; end
 
-            predictions_images = predict(convModel.Model_Net,ims,'MiniBatchSize',64,'ExecutionEnvironment',execEnv);
-            predictions_features = predict(featModel.Model_Net,featureMatrix_Complete, 'ExecutionEnvironment',execEnv);
-            prob_values = (predictions_images*convScaling+ predictions_features*featScaling)/(convScaling+featScaling); 
+            hasDL = license('test','Neural_Network_Toolbox') && ~isempty(ver('nnet'));
+            if hasDL                                        % lLocal, if DL toolbox
+                predictions_images   = predict(convModel.Model_Net, ims, 'MiniBatchSize',64, 'ExecutionEnvironment',execEnv);
+                predictions_features = predict(featModel.Model_Net, featureMatrix_Complete, 'ExecutionEnvironment',execEnv);
+            else                                            % Failsafe for lack of DL toolbox
+                tmpIn  = [tempname(rc.tmpDir) '.mat'];  tmpOut = [tempname(rc.tmpDir) '.mat'];
+                featTbl = featureMatrix_Complete;
+                save(tmpIn, 'ims', 'featTbl', '-v7.3');
+            
+                
+                if ispc
+                    cmd = sprintf('"%s" "%s" "%s" "%s" "%s"', dlExe, tmpIn, tmpOut, Mods.modelFile);   % Windows:
+                else
+                    sprintf('GLIBC_TUNABLES=glibc.rtld.execstack=2 "%s" "%s" "%s" "%s"', dlExe, matlabroot, tmpIn, tmpOut, Mods.modelFile);   % Linux: run_sc_classify_predict.sh <MCR> args
+                end
+
+                [st, out] = system(cmd);
+                if st ~= 0, error('Classifier exec failed:\n%s', out); end
+            
+                R = load(tmpOut);  delete(tmpIn, tmpOut);
+                predictions_images   = R.pImg;
+                predictions_features = R.pFeat;
+            end
+
+            % predictions_images = predict(convModel.Model_Net,ims,'MiniBatchSize',64,'ExecutionEnvironment',execEnv);
+            % predictions_features = predict(featModel.Model_Net,featureMatrix_Complete, 'ExecutionEnvironment',execEnv);
+            % prob_values = (predictions_images*convScaling+ predictions_features*featScaling)/(convScaling+featScaling); 
             predictions = double(prob_values > classification_threshold); % Label of our Data!     
             predictions = predictions(:,2);
     
@@ -334,15 +385,20 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
             Moving_Average_2 = zeros(round(event(1).t_post*Fs/1000) - round(event(1).t_pre*Fs/1000)+1,...
                 size(featureData.elc_sig_corr,2)); % Empty Moving average structure
             win = 1024*ceil(4/(ica_par.dec_fact+1)); % Window for PSD estimation 
-            spectral_estimator = spectrum.welch('Hamming',win,0); % Spectral Estimator
+            if hasSPD; spectral_estimator = spectrum.welch('Hamming',win,0); end % Spectral Estimator 
     
             for comp=1:nIC % iterating over components
     
     
                 %------ POWER SPECTRAL DENSITY ESTIMATION  -----
-                Power_Spectrum = psd(spectral_estimator,sig(comp,:),'NFFT',win,'Fs',Fs);
-                mspettro(comp,:) = sqrt((Fsnew/win)*Power_Spectrum.Data)';
-                F = Power_Spectrum.Frequencies;
+                if hasSPT
+                    Power_Spectrum = psd(spectral_estimator,sig(comp,:),'NFFT',win,'Fs',Fs);
+                    mspettro(comp,:) = sqrt((Fsnew/win)*Power_Spectrum.Data)';
+                    F = Power_Spectrum.Frequencies;
+                else % If no signal processing toolbox is available 
+                    [Pxx, F] = sc_welchPSD(sig(comp,:), win, Fs);
+                    mspettro(comp,:) = sqrt((Fsnew/win)*Pxx)';
+                end
     
     
                 %------ POWER SPECTRAL DENSITY ESTIMATION  -----
@@ -704,7 +760,7 @@ function [classif_table_iters,ica2stat] = sc_5_ds_classify(infile, ds, rc, chan,
 
                 % 1. Number of Eye peaks 
                 sig_temp =ICA.iter(it).IC_sig(comp,:);
-                num_peaks_in_window = sc_eyePeaks_comp(sig_temp,Fs,rc);
+                num_peaks_in_window = sc_eyePeaks(sig_temp,Fs);
                 bestIter_eyePeaks(comp) =  sum(num_peaks_in_window)/(nTica/(60*Fs));
 
     

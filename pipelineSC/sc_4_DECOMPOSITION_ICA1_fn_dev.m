@@ -450,7 +450,9 @@ else
     emptyica = 'no convergence';
     save(file_name, 'emptyica');
     decomp_ica1.ic_stat = {};
-
+    decomp_ica1.hdr = data_arj.hdr;
+    decomp_ica1.actualchantype = actualchantype;
+    decomp_ica1.failed = true;
     decomp_ica1.fsample = [];
     decomp_ica1.label = [];
     decomp_ica1.sampleinfo = [];
@@ -461,6 +463,9 @@ else
     decomp_ica1.dsname = dsname;
         
 end
+if decomp_ica1.failed
+    return;          % _ICA1_failed is already saved, no need to compute even more
+end
 
 payload.type = "ICA1_decomp";
 payload.saveFolder = fullfile(rc.analysisFolder, '4_ICA1');
@@ -470,8 +475,12 @@ payload.data = decomp_ica1;
 payload.rc = rc;
 payload.chan = chan;
 payload.ica = ica;
-send(q, payload);
 
+if isempty(q)
+    sc_clientSaveHandler(payload);   % seryjnie: zapis od razu, synchronicznie
+else
+    send(q, payload);
+end
 % saveFolder = fullfile(rc.analysisFolder, '4_ICA1');
 % file_name = fullfile(saveFolder, [dsname '_ICA1_decomp.mat']);
 % disp( strcat( 'ICA1 decomp: Saving DS ', dsname) );

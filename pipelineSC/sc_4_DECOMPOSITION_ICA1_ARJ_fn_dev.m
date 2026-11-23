@@ -113,5 +113,9 @@ function [data_ica1, sensors2rem,labelsforlog,reporttxtall]= sc_4_DECOMPOSITION_
     payload.ds = ds;
     payload.data = data_ica1;
     payload.infileLen = length(infile);
-    send(q,payload)
+    if isempty(q)
+        sc_clientSaveHandler(payload);   % Serial processing - save as it goes
+    else
+        send(q, payload);   % Else, we are using Data Queue
+    end
 end

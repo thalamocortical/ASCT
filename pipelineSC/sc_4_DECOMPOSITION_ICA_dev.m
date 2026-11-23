@@ -89,8 +89,10 @@ if rc.load <= 3 % do ICA1 and ICA-AR unless asked for loading already performed 
 
         plot_ica1 = {};
         
-        q = parallel.pool.DataQueue; % Create a Parallel Data Queue
-        afterEach(q, @(d) sc_clientSaveHandler(d)); % Define a callback as soon as each worker finishes its job to ger saveHandelr
+        if rc.useParallel
+            q = parallel.pool.DataQueue;
+            afterEach(q, @(d) sc_clientSaveHandler(d));
+        else; q = []; end
         parfor ds = 1 : size(data_all_arj,2)
             [~, dsname, ~] = fileparts( infile{ds} ); % extract file path, sigsa set name, and extension
             [data_decomp_ica1,plot_dat1] = sc_4_DECOMPOSITION_ICA1_fn_dev(data_all_arj(ds), dsname, chan, rc, seg, ica, ar, filter,q);
@@ -212,9 +214,11 @@ if ~ (strcmp(rc.dataFormat, 'itab-sim') || strcmp(rc.dataFormat, 'syn-sim'))
 
         reporttxt_parts = cell(1, size(data_all_decomp_ica1,2));
         %%% Process the data first using Threads 
-
-        q = parallel.pool.DataQueue; % Create a Parallel Data Queue
-        afterEach(q, @(d) sc_clientSaveHandler(d)); % Define a callback as soon as each worker finishes its job to ger saveHandelr
+        
+        if rc.useParallel
+            q = parallel.pool.DataQueue;
+            afterEach(q, @(d) sc_clientSaveHandler(d));
+        else; q = []; end
         parfor ds = 1:size(data_all_decomp_ica1,2)
 
             ICADATA = data_all_decomp_ica1(ds);
@@ -293,8 +297,10 @@ nc_all = [];
         end
 
         %%% Process the data first using THREADING 
-        q = parallel.pool.DataQueue; % Create a Parallel Data Queue
-        afterEach(q, @(d) sc_clientSaveHandler(d)); % Define a callback as soon as each worker finishes its job to ger saveHandelr
+        if rc.useParallel
+            q = parallel.pool.DataQueue;
+            afterEach(q, @(d) sc_clientSaveHandler(d));
+        else; q = []; end        
         for ds = 1:length(infile)
 
             %load data

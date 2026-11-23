@@ -1,4 +1,4 @@
-function [decomp_ica1,plot_ica1] = sc_4_DECOMPOSITION_ICA1_fn_dev(data_arj, dsname, chan, rc, seg, ica, ar, filter)
+function [decomp_ica1,plot_ica1] = sc_4_DECOMPOSITION_ICA1_fn_dev(data_arj, dsname, chan, rc, seg, ica, ar, filter,q)
 % function [augmentedSet,decomp_ica1] = sc_4_DECOMPOSITION_ICA1_fn(data_arj, dsname, chan, rc, sedata_decomp_ica1g, ica, ar, filter)
 %%%%%%%%% ICA DECOMPOSITION %%%%%%
 % Consists of:
@@ -47,7 +47,11 @@ chan2ica_indexes = [find(strcmp(data_arj.hdr.actualchantype, 'eeg'))' find(strcm
 chan2ica_labels = data_arj.label(chan2ica_indexes);
 nmeeg = numel(chan2ica_indexes );
 
-nelech = length(chan.elec); %number of electric channels
+if isfield(chan,'elec')
+    nelech = length(chan.elec); %number of electric channels
+else
+    nelech = 0;
+end
 elec_indexes = ( setxor(1:length(data_arj.hdr.actualchantype), chan2ica_indexes) )';
 
 
@@ -336,27 +340,7 @@ for it = 1 : ica.ICA1_numIter
             thres_d = 0.5;  thres_e = 2;    thres_f = 15;
             thres_g = 0.1;  thres_h = 15;
 
-            %----------------------------------------------------------
-            %---> classification : 0 = artifact   1 = brain signal <---
-            %----------------------------------------------------------
-
-            % %%% Chieti Classification
-            % clas = zeros(1,n_IC); %AL
-            % clas( find(G2 > thres_e & G3 < thres_f & H3 < thres_c) ) = 1; %---> Spectrum_flat - Time_kurtosis - Elc_spectrum_correlation
-            % for ind = 1:ncond
-            %     clas( find( T(ind,:) > thres_g) ) = 1;             %---> High variance in post-trigger period (with respect to pre???)
-            % end
-            % clas( find(G > thres_d | H > thres_a | H2 > thres_b) ) = 0;   %---> Spectrum_one_over_f - Elc_signal_correlation - Elc_power_correlation
-            % good_ic = find( clas==1 );
-
-            % %%% Chieti Classification ENDS
-
-            % if nelech > 0
-            %     art_con = mean( H2(good_ic) );
-            % else
-            %     art_con = 0;
-            % end
-
+                
             art_con = -1;
             good_ic = -1; %fake values, classification will be performed later in the main sc_4_SECOMPOSITION_ICA
 
@@ -466,7 +450,9 @@ else
     emptyica = 'no convergence';
     save(file_name, 'emptyica');
     decomp_ica1.ic_stat = {};
-
+    decomp_ica1.hdr = data_arj.hdr;
+    decomp_ica1.actualchantype = actualchantype;
+    decomp_ica1.failed = true;
     decomp_ica1.fsample = [];
     decomp_ica1.label = [];
     decomp_ica1.sampleinfo = [];
@@ -477,20 +463,30 @@ else
     decomp_ica1.dsname = dsname;
         
 end
+if decomp_ica1.failed
+    return;          % _ICA1_failed is already saved, no need to compute even more
+end
 
 payload.type = "ICA1_decomp";
 payload.saveFolder = fullfile(rc.analysisFolder, '4_ICA1');
 payload.file_name = fullfile(saveFolder, [dsname '_ICA1_decomp.mat']);
 payload.dsname = dsname;
 payload.data = decomp_ica1;
-send(q, payload);
+payload.rc = rc;
+payload.chan = chan;
+payload.ica = ica;
 
+if isempty(q)
+    sc_clientSaveHandler(payload);   % seryjnie: zapis od razu, synchronicznie
+else
+    send(q, payload);
+end
 % saveFolder = fullfile(rc.analysisFolder, '4_ICA1');
 % file_name = fullfile(saveFolder, [dsname '_ICA1_decomp.mat']);
 % disp( strcat( 'ICA1 decomp: Saving DS ', dsname) );
 
-save(file_name, 'decomp_ica1');   %save ICA1 decomposition only (data after ICA1 AR rej is performed in main sc_4_DECOMPOSITION_ICA wrapper)
-clear goodness_ic
+% save(file_name, 'decomp_ica1');   %save ICA1 decomposition only (data after ICA1 AR rej is performed in main sc_4_DECOMPOSITION_ICA wrapper)
+% clear goodness_ic
 
 
 end

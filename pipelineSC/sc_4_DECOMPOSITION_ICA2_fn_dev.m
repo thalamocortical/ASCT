@@ -409,7 +409,11 @@ for it = 1 : ica.ICA2_numIter
         payload.file_name = fullfile(payload.saveFolder, strcat(dsname, '_ica2.mat'));
         payload.dsname = dsname;
         payload.data = data_ica2;
-        send(q, payload);
+        if isempty(q)
+            sc_clientSaveHandler(payload);   % Serial processing - save as it goes
+        else
+            send(q, payload);   % Else, we are using Data Queue
+        end
     else        
         file_name = fullfile(saveFolderds, [dsname '_ICA2_decomp_failed_iter' num2str(it, '%02.0f')]);
         emptyica = 'no convergence';
