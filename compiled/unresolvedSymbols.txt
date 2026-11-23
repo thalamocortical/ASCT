@@ -1,0 +1,8 @@
+Path	Symbol	Reason
+opt/MATbox/fieldtrip/fileio/private/ft_scalingfactor.m	newunit	undeployable
+opt/MATbox/fieldtrip/forward/private/ft_scalingfactor.m	newunit	undeployable
+opt/MATbox/fieldtrip/plotting/private/ft_scalingfactor.m	newunit	undeployable
+opt/MATbox/fieldtrip/plotting/private/rotate.m	syms	undeployable
+opt/MATbox/fieldtrip/private/rotate.m	syms	undeployable
+opt/MATbox/fieldtrip/utilities/ft_scalingfactor.m	newunit	undeployable
+opt/MATbox/spm/matlabbatch/@cfg_entry/subsasgn_check.m	subs	undeployable

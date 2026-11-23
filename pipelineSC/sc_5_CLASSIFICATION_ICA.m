@@ -49,6 +49,12 @@ classif_table_all = struct();
 
 %% %----> load data  and prepare structures <----
 
+
+%%% Creating tmp folder:
+%%% Folder for temporary files (exec input/output) in the directory where EX_SETUP is run
+rc.tmpDir = fullfile(rc.expFolder, 'tmp');
+if ~isfolder(rc.tmpDir), mkdir(rc.tmpDir); end
+
 currentFolder = fullfile(rc.analysisFolder, '6_ICA2');
 
 if exist(currentFolder) % reading 'infile' file
@@ -106,6 +112,7 @@ else
     warning('Model for classification of components not specified. Using default model All_EEG.mat')
 end
 Mods = load(modelFile, 'convModel', 'featModel', 'normStruct', 'mWeights');
+Mods.modelFile = which(modelFile);
 
 
 %% ICA Classification
