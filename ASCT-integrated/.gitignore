@@ -1,0 +1,7 @@
+/class_models/
+.DS_Store
+__MACOSX/
+*.asv
+/multiverse_smoke_results/
+/multiverse_replicates_results/
+/tests/fixtures/
