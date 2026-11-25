@@ -107,7 +107,7 @@ for d = 1:numel(dcDirs)
     f = dir(fullfile(covRoot, dcDirs(d).name, '*_mltout.mat'));
     covFiles = [covFiles; f]; %#ok<AGROW>
 end
-fprintf('  Total files: %d\n', numel(covFiles));
+fprintf('  Total covariance files: %d\n', numel(covFiles));
 
 nC = numel(covFiles);
 subC  = strings(nC,1);
@@ -115,7 +115,6 @@ dcC   = strings(nC,1);
 winC  = strings(nC,1);
 fileC = strings(nC,1);
 avgD  = nan(nC,1);
-arstable = nan(nC,1);
 keepC = false(nC,1);
 
 for i = 1:nC
@@ -147,15 +146,12 @@ for i = 1:nC
 
     try
         S = load(fpath);
-        % if ~isfield(S, 'ARs') || ~isfield(S.ARs, 'V') || isempty(S.ARs.V)
-        %     continue;
-        % end
+        if ~isfield(S, 'ARs') || ~isfield(S.ARs, 'V') || isempty(S.ARs.V)
+            continue;
+        end
         V = S.ARs.V;
-        % if ~ismatrix(V) || size(V,1) ~= size(V,2), continue; end
+        if ~ismatrix(V) || size(V,1) ~= size(V,2), continue; end
         avgD(i)  = mean(diag(V));
-
-        arstable(i) = S.ARs.diag.stability.stable;
-
         keepC(i) = true;
     catch
         continue;
@@ -171,8 +167,8 @@ keepC = dedupKeepSimple(keyC, keepC);
 A = table(subT(keepT), dcT(keepT), nTrials(keepT), ...
     'VariableNames', {'Subject','DC','nTrials'});
 
-B = table(subC(keepC), winC(keepC), dcC(keepC), avgD(keepC), arstable(keepC), ...
-    'VariableNames', {'Subject','Window','DC','avgVr','stab'});
+B = table(subC(keepC), winC(keepC), dcC(keepC), avgD(keepC), ...
+    'VariableNames', {'Subject','Window','DC','avgVr'});
 
 T = outerjoin(B, A, 'Keys', {'Subject','DC'}, ...
     'MergeKeys', true, 'Type', 'left');
