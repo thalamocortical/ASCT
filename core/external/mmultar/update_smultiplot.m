@@ -3,10 +3,6 @@ function update_smultiplot(hObject,plotdata,plotminv,plotmaxv,prfigname,basev,bo
 if ~ishandle(hObject)
     return
 end
-
-%%% MD
-set(0,'DefaultFigureVisible',mv.visible_fig);
-%%%
 handles=guihandles(hObject);
 data=guidata(hObject);
 data.plotdata=plotdata;

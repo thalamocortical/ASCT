@@ -20,11 +20,7 @@ dlug=size(dat,2);
 trials=size(dat,3);
 
 METHODS=[1,2,4,8];
-if nargin<6
-    meth_num = 1;
-else
-    meth_num = METHODS(method);
-end
+meth_num = METHODS(method);
 
 if isempty(winlen)
     winlen = dlug-winnum*winshf;
@@ -57,6 +53,9 @@ fun = zeros(FUNS,chans,chans,length(plev),winnum);
 
 hnd=waitbar(0,'Calculating baseline...');
 dat2=zeros(chans,winlen,trials);
+
+fid=fopen('bootfil.dat','ab');
+
 for win=1:winnum
     sstart = (win-1)*winshf;
     dat1=dat(:,(sstart+1):(sstart+winlen),:); % window extracted
@@ -66,17 +65,7 @@ for win=1:winnum
                 dat2(ic,:,it)=dat1(ic,randperm(winlen),it); % window shuffled
             end
         end
-        if meth_num<4
-            [rleft,rright,r]=countCorr(dat2,p,meth_num);
-        else
-            [rleft,rright,r]=countCov(dat2,p,meth_num);
-        end
-
-        xres=linsolve(squeeze(rleft),squeeze(rright));
-        mip=chans*p;
-        Vr=DGEMM_symul('T','N',chans,chans,mip,-1,xres,mip,rright,mip,1,squeeze(r),chans);
-        AR=reshape(xres,[chans p chans]);
-        ARr=permute(AR,[3 1 2]);
+        [ARr,Vr]=mvar_estimate(dat2,p,meth_num,mv);
 
         [s0,h0,a0]=mult_ar_calc(ARr,Vr,frqmin,frqmax,1./fs);
         for funcnum=1:FUNS
@@ -86,7 +75,10 @@ for win=1:winnum
         waitbar(((win-1)*bootnum+boot)/winnum/bootnum);
 
     end
+    if win==1 disp(size(fun_tot)); end
+    fwrite(fid,fun_tot(:),'float32');
     fun(:,:,:,:,win)=prctile(reshape(fun_tot,[FUNS,chans,chans,FRQPMAX*bootnum]),plev,4);
     waitbar(win/winnum);
 end
+fclose(fid);
 close(hnd);

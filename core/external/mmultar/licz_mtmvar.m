@@ -17,24 +17,17 @@ chans=size(dat,1);
 % end
 
 METHODS=[1,2,4,8];
-if nargin<6
-    meth_num = 1;
-else
-    meth_num = METHODS(method);
-end
+meth_num = METHODS(method);
     
-if meth_num<4
-    [rleft,rright,r]=countCorr(dat,p,meth_num);
-else
-    [rleft,rright,r]=countCov(dat,p,meth_num);
-end
-xres=linsolve(rleft,rright);
-mip=chans*p;
-Vr=DGEMM_symul('T','N',chans,chans,mip,-1,xres,mip,rright,mip,1,r,chans);
-AR=reshape(xres,[chans p chans]);
-ARr=permute(AR,[3 1 2]);
+[ARr,Vr]=mvar_estimate(dat,p,meth_num,mv);
 ARs.coefs=ARr;
 ARs.V=Vr;
+
+% --- goodness of fit of the model: residual whiteness and stability ---
+if ~isfield(mv,'diagnost') || mv.diagnost
+    ARs.diag=mvar_diagnostics(dat,ARr,[],[],mvar_diag_verbose(mv),...
+        sprintf('%s p=%d',mv.fname,p));
+end
 
 if mv.incl_instant
     [ARb0,ARb,Vb]=instant_caus_sub1(ARr,Vr);

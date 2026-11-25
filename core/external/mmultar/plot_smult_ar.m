@@ -16,11 +16,13 @@ global FVL FVS
 fnumbs1=getfunccalcnumbers(mv);
 fnumbs2=getfuncsavenumbers(mv);
 fnumbs=setdiff(union(fnumbs1,fnumbs2),8); % 8 jest dla AR i H do poprawienia
+fnumbs=reshape(fnumbs,1,[]);    % by³y jakie¶ rozbie¿no¶ci
 FUNS=length(fnumbs);
 
-fnumbs=getfunccalcnumbers(mv);
+%fnumbs=getfunccalcnumbers(mv);
 
-for i=fnumbs1
+% for i=fnumbs'
+for i=fnumbs
     [datv,minv,maxv]=FVL{i}.f(s,h,a,1);
     if ~isempty(basev)
         ixbn=find(fnumbs==i);
@@ -31,7 +33,9 @@ for i=fnumbs1
             datv(:,:,ii2,:)=dv1;
         end
     end
-    smultipcolor(datv,minv,maxv,FVL{i}.tt,{prfigname FVL{i}.sx},opis,mv.savefigs,mv.pautoflag);
+    if ~isempty(intersect(i,fnumbs1))
+        smultipcolor(datv,minv,maxv,FVL{i}.tt,{prfigname FVL{i}.sx},opis,mv.savefigs,mv.pautoflag);
+    end
 end
 
 fnumbs2=getfuncsavenumbers(mv);
@@ -50,4 +54,11 @@ if mv.sAR
     %save(savname,'-append','AR','H');
     ARs.H=h;
     save(savname,'-append','ARs');
+end
+
+% --- store the goodness-of-fit diagnostics also when the AR coefficients
+%     themselves are not saved (ARs, if saved, already contains ARs.diag) ---
+if ~mv.sAR && isstruct(ARs) && isfield(ARs,'diag') && ~isempty(ARs.diag) && ~isempty(savname)
+    ARdiag=ARs.diag;
+    save(savname,'-append','ARdiag');
 end

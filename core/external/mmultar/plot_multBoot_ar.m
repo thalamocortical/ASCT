@@ -2,7 +2,6 @@ function plot_multBoot_ar(sbtfun,mv,bslv)
 % plotting bootstrapped results
 % (C) Maciej Kaminski 2012 (GPLv3 http://www.gnu.org/licenses/gpl-3.0.txt)
 
-
 sz=size(sbtfun);
 
 opis=mv.opisy;

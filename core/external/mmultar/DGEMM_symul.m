@@ -11,14 +11,18 @@ c=squeeze(c);
 %disp(b(:,[1,2,3,end-2:end]))
 if upper(transa)=='N'
     if upper(transb)=='N'
+        %disp('*');
         res = alpha*a(1:m,1:k)*b(1:k,1:n);
     else
+        %disp('**');
         res = alpha*a(1:m,1:k)*b(1:n,1:k)';
     end
 else
     if upper(transb)=='N'
+        %disp('***');
         res = alpha*a(1:k,1:m)'*b(1:k,1:n);
     else
+        %disp('****');
         res = alpha*a(1:k,1:m)'*b(1:n,1:k)';
     end
 end

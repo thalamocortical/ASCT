@@ -9,11 +9,7 @@ global Plev_glb
 if ~isempty(Plev_glb)
     plev0=Plev_glb;
 else
-    if isfield(mv,'plev')
-        plev0=[mv.plev*100 95 90 75];   %mw
-    else
-        plev0=[99 95 90 75];
-    end
+    plev0=[99 95 90 75];
 end
 plev1=plev0(mv.siglev);
 plev2=[(100-plev1)/2 50 100-(100-plev1)/2];
@@ -26,13 +22,12 @@ else
     if isempty(mv.recl) mv.recl=size(dat,2); end
     if isempty(mv.ntrls) mv.ntrls=size(dat,3); end
 end
-if mv.userange && (mv.timerangestart>mv.recl || mv.timerangeend>mv.recl || mv.timerangestart<0 || mv.timerangeend<0)
+if mv.userange && (mv.timerangestart>mv.recl || mv.timerangeend>mv.recl)
     h=warndlg({'Time range parameters incorrect','The whole range will be used'},'Warning','modal');
     uiwait(h);
     mv.userange=0;
 end
 if mv.userange
-    if mv.timerangestart == 0; mv.timerangestart=1; end
     dat=dat(:,mv.timerangestart:mv.timerangeend,:);
     mv.recl=mv.timerangeend-mv.timerangestart+1;
 end
@@ -102,8 +97,7 @@ fnumbs=setdiff(union(fnumbs1,fnumbs2),8); % 8 jest dla AR i H
 saveflag=0;
 if ~isempty(fnumbs2)
     saveflag=1;
-    % savname=[mv.fname '_mout.mat'];
-    savname=strrep(mv.fname,'_mltin.mat', '_mltout.mat');
+    savname=[mv.fname '_mout.mat'];
     save(savname,'mv','plev1','plev2');
 else
     savname='';

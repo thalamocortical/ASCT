@@ -26,9 +26,6 @@ function varargout = smultiplot(varargin)
 
 % Begin initialization code - DO NOT EDIT
 % (C) Maciej Kaminski 2012 (GPLv3 http://www.gnu.org/licenses/gpl-3.0.txt)
-%%% MD - VISIBILITY 
-% set(0,'DefaultFigureVisible',varargin{11});
-%%%
 gui_Singleton = 0;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
@@ -45,10 +42,7 @@ if nargout
 else
     gui_mainfcn(gui_State, varargin{:});
 end
-
-
 % End initialization code - DO NOT EDIT
-
 
 
 % --- Executes just before smultiplot is made visible.
@@ -61,21 +55,9 @@ function smultiplot_OpeningFcn(hObject, eventdata, handles, varargin)
 
 % Choose default command line output for smultiplot
 handles.output = hObject;
-%%% %MD
-% set(handles.figure1,'Visible',varargin{11});
-% set(0,'DefaultFigureVisible',varargin{11});
-% handles.figure1.HandleVisibility = 'off';
-%handles.figure1.Visible = varargin{11};
-% if strcmp(varargin{11},'on')
-%     figure(handles.figure1)
-% else
-%     
-% end
-%%%
-%figure(handles.figure1 ); %%MD!!!!!!
+figure(handles.figure1);
 set(handles.figure1,'Name',varargin{4});
 set(handles.text1,'String',num2str(varargin{3}));
-
 handles.plotdata=varargin{1};
 handles.plotminv=varargin{2};
 handles.plotmaxv=varargin{3};
@@ -86,7 +68,6 @@ handles.savefigs=varargin{7};
 handles.baselnv=varargin{8};
 handles.bootflag=varargin{9};
 handles.pautoflag=varargin{10};
-% handles.visibility = varargin{11}; %MD
 set(handles.checkbox1,'Value',get(handles.checkbox1,'Min'));
 handles.sqflag=get(handles.checkbox1,'Value');
 %handles.sqflag=1;
@@ -105,8 +86,6 @@ handles.sqflag=get(handles.checkbox1,'Value');
 % end
 % set(fig,'Units',units);
 % set(fig,'Toolbar','figure');
-%%% MD
-%%%
 
 
 if handles.bootflag
@@ -135,7 +114,6 @@ end
 if handles.savefigs
     printfigure(handles,handles);
 end
-
 % Update handles structure
 guidata(hObject, handles);
 % UIWAIT makes smultiplot wait for user response (see UIRESUME)
@@ -150,9 +128,7 @@ function varargout = smultiplot_OutputFcn(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Get default command line output from handles structure
-%handles.output.Visible = 'off';
 varargout{1} = handles.output;
-
 guidata(hObject, handles);
 
 function edit1_Callback(hObject, eventdata, handles)
@@ -182,12 +158,15 @@ function pushbutton1_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-prompt = {'Enter graphs max value:'};
-dlg_title = 'Change scaling';
+% prompt = {'Enter graphs max value:'};
+% dlg_title = 'Change scaling';
+prompt = "Enter graphs max value:";
+dlg_title = "Change scaling";
 num_lines = 1;
 %def = curmax;
 data=guidata(hObject);
-def = {num2str(data.plotmaxv)};
+%def = {num2str(data.plotmaxv)};
+def = string(num2str(data.plotmaxv));
 answer = inputdlg(prompt,dlg_title,num_lines,def);
 if ~isempty(answer)
     n=str2num(answer{1});

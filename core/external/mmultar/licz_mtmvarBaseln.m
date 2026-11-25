@@ -18,11 +18,7 @@ else
 end
 
 METHODS=[1,2,4,8];
-if nargin<6
-    meth_num = 1;
-else
-    meth_num = METHODS(method);
-end
+meth_num = METHODS(method);
 
 fnumbs=getfunccalcnumbers(mv);
 fnumbs2=getfuncsavenumbers(mv);
@@ -42,17 +38,7 @@ for boot=1:bootnum
             dat2(ic,:,it)=dat(ic,randperm(npts),it);
         end
     end
-    if meth_num<4
-        [rleft,rright,r]=countCorr(dat2,p,meth_num);
-    else
-        [rleft,rright,r]=countCov(dat2,p,meth_num);
-    end
-
-    xres=linsolve(rleft,rright);
-    mip=chans*p;
-    Vr=DGEMM_symul('T','N',chans,chans,mip,-1,xres,mip,rright,mip,1,r,chans);
-    AR=reshape(xres,[chans p chans]);
-    ARr=permute(AR,[3 1 2]);
+    [ARr,Vr]=mvar_estimate(dat2,p,meth_num,mv);
 
     if mv.incl_instant
         [ARb0,ARb,Vb]=instant_caus_sub1(ARr,Vr);
@@ -65,5 +51,9 @@ for boot=1:bootnum
     end
     waitbar(boot/bootnum);
 end
+% fid=fopen('bootfil.dat','ab');
+% disp(size(fun_tot));
+% fwrite(fid,fun_tot(:),'float32');
+% fclose(fid);
 fun(:,:,:,:)=prctile(reshape(fun_tot,[FUNS chans chans FRQPMAX*bootnum]),plev,4);
 close(hnd);

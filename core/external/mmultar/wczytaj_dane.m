@@ -14,8 +14,8 @@ switch formt
     case 'ASCII'
         %fclose(fid);
         dat=load(fname);
-        dat=reshape(dat,chans,trials,dlug);
-        dat=permute(dat,[1 3 2]);
+        dat=reshape(dat,dlug,trials,chans);
+        dat=permute(dat,[3 1 2]);
     case 'MAT file'
         %fclose(fid);
         c=whos('-file',fname);

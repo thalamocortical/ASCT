@@ -63,15 +63,20 @@ handles.MAXORDER=varargin{4};
 
 set(handles.slider1,'Min',1);
 set(handles.slider1,'Max',handles.MAXORDER);
-c=handles.crit(1,:);
-minpos=find(c==min(c));
-set(handles.edit1,'String',num2str(minpos));
-set(handles.slider1,'Value',minpos);
+c=squeeze(handles.crit(1,:,:));
+[minpos_x,minpos_y]=find(c==min(min(c)));
+if size(c,1)>1
+    mp=minpos_x;
+else
+    mp=minpos_y;
+end
+set(handles.edit1,'String',num2str(mp));
+set(handles.slider1,'Value',mp);
 set(handles.slider1,'SliderStep',[1 10]./(handles.MAXORDER-1));
 %xlabel(handles.axes1,'order');
 set(handles.text4,'String',TITLE);
-plot(handles.axes1,handles.crit(1,:));
-set(handles.axes1,'XLim',[1 length(handles.crit(1,:))]);
+plot(handles.axes1,squeeze(handles.crit(1,:,:)));
+set(handles.axes1,'XLim',[1 length(handles.crit(1,:,1))]);
 set(handles.radiobutton1,'Value',get(handles.radiobutton1,'Max'));
 set(handles.figure1,'Name','Select optimal model order');
 guidata(hObject, handles);
@@ -191,11 +196,16 @@ switch get(eventdata.NewValue,'Tag') % Get Tag of selected object.
     otherwise
         % Code for when there is no match.
 end
-c=handles.crit(crit_no,:);
-minpos=find(c==min(c));
-set(handles.edit1,'String',num2str(minpos));
-set(handles.slider1,'Value',minpos);
+c=squeeze(handles.crit(crit_no,:,:));
+[minpos_x,minpos_y]=find(c==min(min(c)));
+if size(c,1)>1
+    mp=minpos_x;
+else
+    mp=minpos_y;
+end
+set(handles.edit1,'String',num2str(mp));
+set(handles.slider1,'Value',mp);
 set(handles.text4,'String',get(eventdata.NewValue,'String'));
-plot(handles.axes1,handles.crit(crit_no,:));
-set(handles.axes1,'XLim',[1 length(handles.crit(crit_no,:))]);
+plot(handles.axes1,squeeze(handles.crit(crit_no,:,:)));
+set(handles.axes1,'XLim',[1 length(handles.crit(crit_no,:,1))]);
 guidata(hObject, handles);

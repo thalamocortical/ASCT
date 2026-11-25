@@ -12,7 +12,7 @@ a=complex(zeros(chans,chans,FRQPMAX));
 ci=complex(zeros(1,p));
 for frqp=1:FRQPMAX
     frq=fmin+(frqp-1)*frqstep;
-    ce=exp(-2*pi*i*frq*deltat);
+    ce=exp(-2*pi*1i*frq*deltat);
     ci(1)=ce;
     for k=2:p
         ci(k)=ci(k-1)*ce;
@@ -23,7 +23,8 @@ for frqp=1:FRQPMAX
     end
     a(:,:,frqp)=c;
     h(:,:,frqp)=inv(c);
-    s(:,:,frqp)=h(:,:,frqp)*V*conj(h(:,:,frqp)');
+    %s(:,:,frqp)=h(:,:,frqp)*V*conj(h(:,:,frqp)');
+    s(:,:,frqp)=h(:,:,frqp)*V*h(:,:,frqp)';
 end
 
 

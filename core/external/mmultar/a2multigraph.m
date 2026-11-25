@@ -14,13 +14,19 @@ datlen=sz(3);
 dstep=1/(datlen-1);
 axis([0 rows 0 cols])
 
+global dcolor
+
 if prfig
     alw=0;
 else
     alw=1;
 end
 if pautoflag~=0
-    gmax=find_wyn_maxv(dat)*pautoflag;
+    if pautoflag<0
+        gmax=-double(pautoflag);
+    else
+        gmax=find_wyn_maxv(dat)*double(pautoflag);
+    end
 else
     gmax=globmax;
 end
@@ -50,7 +56,13 @@ for row=1:rows
         celldat2(celldat2>gmax)=gmax;
         x=[col-1 (col-1):dstep:col col:-dstep:(col-1) col-1];
         y=[rows-row celldat2'.*a+b celldat1(end:-1:1)'.*a+b rows-row];
-        patch(x,y,'b');
+        if ~isempty(dcolor) && (row==col) % na przek±tnej damy dcolor zamiast niebieskiego
+            %patch(x,y,'FaceColor',dcolor);
+            patch(x,y,dcolor);
+        else
+            %patch(x,y,'FaceColor','b');
+            patch(x,y,'b');
+        end
         if ~isempty(basev)
             vl=basev(row,col);
             if sqflag

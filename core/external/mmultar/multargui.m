@@ -62,6 +62,41 @@ mv=varargin{1};
 %possibleDataFormats = {'float32','int16','int32','ASCII','EDF/BDF'};
 possibleDataFormats = {'float32','int16','int32','float64','ASCII','MAT file'};
 set(handles.popupmenu1,'String',possibleDataFormats);
+
+% --- "Model diagnostics" switch.  The control is created here instead of in
+%     GUIDE so that the binary multargui.fig does not have to be modified.
+%     Placed in the free area below the output panel (uipanel8); the figure
+%     has Units='characters' and Resize='off', so the position is fixed.
+if ~isfield(mv,'diagnost')
+    mv.diagnost=1;
+end
+% Method 4 now routes to the LWR lattice estimator (see MVAR_ESTIMATE), so the
+% label stored in the .fig would be misleading.  Relabelled here for the same
+% reason the diagnostics checkbox is created here: the .fig stays untouched.
+set(handles.radiobutton22,'String','LWR (lattice)',...
+    'TooltipString',['Multichannel Levinson-Wiggins-Robinson lattice estimator. '...
+        'Replaces the modified covariance method, which assumed the backward '...
+        'coefficients equal the forward ones - valid only for time-reversible '...
+        'processes. Supports multitrial data and bootstrap; in bootstrap mode the '...
+        'recursion is recomputed for every resample, which is noticeably slower.']);
+
+handles.checkbox_diagnost=uicontrol(hObject,'Style','checkbox',...
+    'Units','characters','Position',[124.6 11.5 38.0 1.4],...
+    'Tag','checkbox_diagnost','String','Model diagnostics',...
+    'TooltipString',['Residual whiteness (Li-McLeod / Hosking portmanteau tests) '...
+                     'and stability of the model (companion matrix eigenvalues)'],...                     
+    'Callback','multargui(''checkbox_diagnost_Callback'',gcbo,[],guidata(gcbo))');
+handles.text_diagnost=uicontrol(hObject,'Style','text',...
+    'Units','characters','Position',[126.6 5.8 36.0 4.8],...
+    'Tag','text_diagnost','HorizontalAlignment','left');
+% handles.text_diagnost=uicontrol(hObject,'Style','text',...
+%     'Units','characters','Position',[126.6 5.8 36.0 4.8],...
+%     'Tag','text_diagnost','HorizontalAlignment','left',...
+%     'String',{'residual whiteness + stability';...
+%               'of the fitted MVAR model;';...
+%               'report in the command window,';...
+%               'values stored in ARs.diag'});
+
 handles=values_update(handles,mv);
 handles.multdata=mv;
 % Update handles structure
@@ -976,6 +1011,9 @@ if ~(isnumeric(FileName) && FileName==0 && isnumeric(PathName) && PathName==0)
         if ~isfield(mv,'pautoflag')
             mv.pautoflag=0;
         end
+        if ~isfield(mv,'diagnost')
+            mv.diagnost=1;
+        end
         handles=values_update(handles,mv);
         handles.multdata=mv;
     else
@@ -1065,6 +1103,13 @@ else
     set(handles.checkbox22,'Value',0);
 end    
 set(handles.checkbox24,'Value',mv.incl_instant);
+if isfield(handles,'checkbox_diagnost')
+    if isfield(mv,'diagnost')
+        set(handles.checkbox_diagnost,'Value',mv.diagnost);
+    else
+        set(handles.checkbox_diagnost,'Value',1);
+    end
+end
 
 % --- Executes when figure1 is resized.
 function figure1_ResizeFcn(hObject, eventdata, handles)
@@ -1492,6 +1537,18 @@ if mv.userange
 else
     set(handles.text23,'String','whole record');
 end
+handles.multdata=mv;
+guidata(hObject, handles);
+
+
+% --- Executes on button press in the programmatically created
+%     "Model diagnostics" checkbox (see multargui_OpeningFcn).
+function checkbox_diagnost_Callback(hObject, eventdata, handles)
+% hObject    handle to checkbox_diagnost (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+mv=handles.multdata;
+mv.diagnost=(get(hObject,'Value')==get(hObject,'Max'));
 handles.multdata=mv;
 guidata(hObject, handles);
 

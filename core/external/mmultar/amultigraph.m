@@ -9,6 +9,9 @@ else
     cla;
 end
 
+global dcolor
+global FNTSZ    
+
 sz=size(dat);
 rows=sz(1);
 cols=sz(2);
@@ -16,17 +19,21 @@ datlen=sz(3);
 dstep=1/(datlen-1);
 axis(ax,[0 rows 0 cols])
 
-
 if prfig
     alw=0;
 else
     alw=1;
 end
 if pautoflag~=0
-    gmax=find_wyn_maxv(dat)*pautoflag;
+    if pautoflag<0
+        gmax=-double(pautoflag);
+    else
+        gmax=find_wyn_maxv(dat)*double(pautoflag);
+    end
 else
     gmax=globmax;
 end
+sqflag=1;
 if sqflag gmax=sqrt(gmax); end
 %axes(ax);
 line('Xdata',[0 cols],'Ydata',[rows rows],'Color','black','LineWidth',1+alw,'Parent',ax); 
@@ -48,7 +55,12 @@ for row=1:rows
         celldat(celldat>gmax)=gmax;
         x=[col-1 (col-1):dstep:col col col-1];
         y=[rows-row celldat'.*a+b rows-row rows-row];
-        patch(x,y,'b','Parent',ax);
+        if ~isempty(dcolor) && (row==col)  % na przek±tnej damy dcolor zamiast niebieskiego
+%             patch(x,y,'FaceColor',dcolor,'Parent',ax);
+            patch(x,y,dcolor,'Parent',ax);
+        else
+            patch(x,y,'b','Parent',ax);
+        end
         if ~isempty(basev)
             vl=basev(row,col);
             if sqflag
@@ -77,6 +89,8 @@ else
     xtk(1:min(rows,length(opisy)))=opisy(1:min(rows,length(opisy)));
     ytk(rows:-1:rows-min(rows,length(opisy))+1)=opisy(1:min(rows,length(opisy)));
 end
-set(ax,'XTickLabel',xtk,'YTickLabel',ytk);
+%set(ax,'XTickLabel',xtk,'YTickLabel',ytk);
+set(ax,'XTickLabel',xtk,'FontSize',FNTSZ);
+set(ax,'YTickLabel',ytk,'FontSize',FNTSZ);
 [f_p,f_n,f_e]=fileparts(pfname{1});
 title(ax,untex([stitle ' (' f_n f_e ')']));

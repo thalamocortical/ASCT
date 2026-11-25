@@ -1,5 +1,14 @@
-function [rleft_tot,rright_tot,r_tot]=countCorrSav(x,ip,iwhat)
+function [rleft_tot,rright_tot,r_tot]=countCorrSav(x,ip,iwhat,mv)
 % (C) Maciej Kaminski 2012 (GPLv3 http://www.gnu.org/licenses/gpl-3.0.txt)
+%
+% Per-trial correlation matrices for the bootstrap, counterpart of COUNTCORR.
+%
+% mv carries the normalization flags (norm0/norm1/norm2) and is applied to the
+% data exactly as in COUNTCORR, so that the bootstrap estimates are built from
+% the same data as the ordinary ones.  Unlike COUNTCORR the normalization loops
+% run over the actual size of x instead of mv.chans / mv.recl; the result is
+% identical whenever x is the whole record, and correct also in short-time mode
+% where x is a single window shorter than mv.recl.
 
 sdt=size(x);
 m=sdt(1);
@@ -9,6 +18,35 @@ if length(sdt)>2
 else
     trials=1;
 end
+
+%-------------------------------
+if mv.norm0
+    mnd=mean(x,2);
+    for tt=1:trials
+        for cc=1:m
+            x(cc,:,tt)=x(cc,:,tt)-mnd(cc,1,tt);
+        end
+    end
+end
+if mv.norm1
+    sdd=std(x,0,2);
+    for tt=1:trials
+        for cc=1:m
+            x(cc,:,tt)=x(cc,:,tt)/sdd(cc,1,tt);
+        end
+    end
+end
+if mv.norm2
+    if trials>1
+        mnd=mean(x,3);
+        for nn=1:n
+            for cc=1:m
+                x(cc,nn,:)=x(cc,nn,:)/mnd(cc,nn,:);
+            end
+        end
+    end
+end
+%--------------------
 
 mip=m*ip;
 

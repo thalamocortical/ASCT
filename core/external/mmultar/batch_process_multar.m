@@ -1,6 +1,30 @@
 %cmdfile='wlosi_lista.txt';
-cmdfile='files_to_process.txt';
+%cmdfile='files_to_process.txt';
+%cmdfile='batch_odleglosciowe9(0-45ord7).cmd';
+%cmdfile='nirscmdname2Hz_1_5-kopia.cmd'
+%cmdfile='Obrazki05.cmd'
+%cmdfile='/Users/maciejkaminski/Library/CloudStorage/GoogleDrive-Maciek.Kaminski@fuw.edu.pl/.shortcut-targets-by-id/1SvUROMCBFZFZD0w_TMsxwLa3c1WjmNTh/EEGdata_WeedTeam/00_RS/01_experimental/01_1_E0/00_raw/00_raw_mat/5ss_E0/batch_testy_E0_2.cmd'
+%cmdfile='/Users/maciejkaminski/Library/CloudStorage/GoogleDrive-Maciek.Kaminski@fuw.edu.pl/.shortcut-targets-by-id/1SvUROMCBFZFZD0w_TMsxwLa3c1WjmNTh/EEGdata_WeedTeam/procesuj.cmd';
 
+%cmdfile='/Users/maciejkaminski/Data/Pfu/v4/M-Wave/work/Obrazki03a.cmd'
+% cmdfile='/Users/maciejkaminski/Documents/txt/Studenci/Paw³owska/procesuj.cmd';
+%cmdfile="/Users/maciejkaminski/Data/Klozapina/Bordzo³/klozapina-kopia.cmd";
+
+% cmdfile="/Users/maciejkaminski/Data/Marta/kolejnosc3/J_all_TAK-current.cmd";
+% cmdfile="/Users/maciejkaminski/Data/Pfu/v4/M-Wave/work/very slow/calosciowe4win.cmd";
+% cmdfile="/Users/maciejkaminski/Data/Marta/kolejnosc4/J_all_TAK-current.cmd";
+
+% cmdfile="/Users/maciejkaminski/Data/Marta/kolejnosc5/mmcommand2.cmd";
+% cmdfile="/Users/maciejkaminski/Data/part_ref/mmcommand2.cmd";
+% cmdfile="/Users/maciejkaminski/Data/Pfu/v4/M-Wave/work/self/self.cmd";
+% cmdfile="/Users/maciejkaminski/Data/Marta/kolejnosc5/mmcommand_fn.cmd";
+
+% cmdfile='/Users/maciejkaminski/Data/Pfu/v4/M-Wave/work/Obrazki03a.cmd'
+% cmdfile="/Users/maciejkaminski/Data/Marta/wszystkie odpowiedzi/kolejnosc5/mmcommand_all.cmd";
+cmdfile="/Users/maciejkaminski/Data/Pfu/v4/M-Wave/work/Obrazki05/Obrazki05_v2.cmd";
+
+global dcolor
+dcolor='g';
 
 % MULTAR_DEFAULT_VALUES = struct(...
 %     'fname','','chans',1,'recl',[],'ntrls',1,'fsamp',100,'fstart',0,'fend',50,...
@@ -48,7 +72,7 @@ if fid~=0
     % 36:sCohs 37:sdDTF 38:sPDC 39:sffDTF 40:sAR
     % 41:savefigs 42:userange 43:timerangestart
     % 44:timerangeend 45:pautoflag
-    Cinfo = textscan(fid,'%q%q%f%f%f%f%f%f%f%d%d%f%f%f%d%q%d%d%d%d%d%d%f%f%f%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d',...
+    Cinfo = textscan(fid,'%q%q%f%f%f%f%f%f%f%d%d%f%f%f%d%q%d%d%d%d%d%d%f%f%f%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%d%f%d',...
         'Delimiter',',','EmptyValue',0,'CommentStyle','%');
     fclose(fid);
     dlugosc=size(Cinfo{3},1);

@@ -19,17 +19,13 @@ chans=size(dat,1);
 dlug=size(dat,2);
 
 METHODS=[1,2,4,8];
-if nargin<6
-    meth_num = 1;
-else
-    meth_num = METHODS(method);
-end
+meth_num = METHODS(method);
 
 if isempty(winlen)
     winlen = dlug-winnum*winshf;
     if winlen<=0
         disp('Illegal window length');
-        s=[]; h=[]; a=[]; AR_tot=[];
+        s=[]; h=[]; a=[]; AR_tot=[]; ARs=[];
         return
     end
 end
@@ -40,7 +36,7 @@ if isempty(winnum)
     winnum = floor((dlug-winlen)/winshf);
     if winnum<=0
         disp('Illegal number of windows');
-        s=[]; h=[]; a=[]; AR_tot=[];
+        s=[]; h=[]; a=[]; AR_tot=[]; ARs=[];
         return
     end
 end
@@ -57,20 +53,17 @@ else
     V_tot=[];
 end
 
+% --- goodness of fit of the model: residual whiteness and stability ---
+docheck = ~isfield(mv,'diagnost') || mv.diagnost;
+if docheck
+    diagw=cell(1,winnum);
+end
+
 hnd=waitbar(0,'Processing windows...');
 for win=1:winnum
     sstart = (win-1)*winshf;
 
-    if meth_num<4
-        [rleft,rright,r]=countCorr(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num);
-    else
-        [rleft,rright,r]=countCov(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num);
-    end
-    xres=linsolve(rleft,rright);
-    mip=chans*p;
-    Vr=DGEMM_symul('T','N',chans,chans,mip,-1,xres,mip,rright,mip,1,r,chans);
-    AR=reshape(xres,[chans p chans]);
-    ARr=permute(AR,[3 1 2]);
+    [ARr,Vr]=mvar_estimate(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num,mv);
 
     if mv.incl_instant
         [ARb0,ARb,Vb]=instant_caus_sub1(ARr,Vr);
@@ -82,8 +75,19 @@ for win=1:winnum
         AR_tot(:,:,:,win)=ARr;
         V_tot(:,:,win)=Vr;
     end
+    if docheck
+        diagw{win}=mvar_diagnostics(dat(:,(sstart+1):(sstart+winlen),:),ARr,[],[],0,...
+            sprintf('window %d',win));
+    end
     waitbar(win/winnum);
 end
 close(hnd);
 ARs.coefs=AR_tot;
 ARs.V=V_tot;
+
+if docheck
+    ARs.diag=[diagw{:}];
+    if mvar_diag_verbose(mv)
+        mvar_diag_report(ARs.diag,sprintf('%s p=%d,',mv.fname,p));
+    end
+end

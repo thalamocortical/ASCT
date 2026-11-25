@@ -12,13 +12,13 @@ mv.format = 6;          % 6: mat file
 mv.pautoflag = 0;
 mv.incl_instant = 0;    % include instantaneous
 mv.pord = mv.mvarOrd;
-mv.method = 0;          % AR model order estimation: 1=Yule-Walker
+mv.method = 1;          % AR model order estimation: 1=Yule-Walker
 mv.trial_mode = 0;      % 0 - multi-trial
 mv.chansel = mv.chanSel;
 mv.norm1 = mv.varNorm;  % variance divide
 mv.norm0 = 0;           % rm temp mean
 mv.morm2 = 0;           % ensemble mean
-mv.diagnost = 0;        % MVAR diagnostics
+mv.diagnost = 1;        % MVAR diagnostics
 if ~isfield(mv,'baseln'); mv.baseln = 0; end      % STAT estimate baseline
 if ~isfield(mv,'bootst'); mv.bootst = 0; end       % STAT bootstrap
 if ~isfield(mv,'siglev'); mv.siglev = 1; end

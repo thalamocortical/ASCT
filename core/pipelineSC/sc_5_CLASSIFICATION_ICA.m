@@ -9,6 +9,8 @@
 load('colors.mat');
 predictions_all = [];
 prob_values_all = [];
+classif_table_all = struct();
+
 Y_all =[];
 set(0,'DefaultLineLineWidth',1,'defaultFigurePosition',[40 120 3000 1800]);
 % set(0,'DefaultLineLineWidth',1,'defaultFigurePosition',[80 120 1000 680]);   per schermi con risoluzione 1024x768
@@ -29,11 +31,7 @@ else
     end
 end
 
-if ~isfield(rc, "valid")
-    Validation = 0;
-else
-    Validation = rc.valid;
-end
+
 
 if ~isfield(rc, 'Data_volume')
     Data_volume = 'all'; %Controlls whether one will analyse all data or only best iterations
@@ -43,11 +41,23 @@ end
 %+ 'best' --> processing only best iteration
 %+ 'all'  --> procesing all iterations
 
-Unsure_only = 0;        %analyse only labels that were left unsure DEPRECEATED
-classification_threshold = 0.5;
-classif_table_all = struct();
+%%% MEG Deprecieated functions (Failsafe for now
+if ~rc.eeg 
+    Unsure_only = 0;        %analyse only labels that were left unsure DEPRECEATED
+    classification_threshold = 0.5;
+    model_type = 'if';% Model type: DEPRECIATED! Model should always use "if" 
+
+    if ~isfield(rc, "verbosity"); Verbosity = 0; else; Verbosity = rc.verbosity;  end
+    if ~isfield(rc, "valid"); Validation = 0; else; Validation = rc.valid;  end
+end
 
 %% %----> load data  and prepare structures <----
+
+
+%%% Creating tmp folder:
+%%% Folder for temporary files (exec input/output) in the directory where EX_SETUP is run
+rc.tmpDir = fullfile(rc.expFolder, 'tmp');
+if ~isfolder(rc.tmpDir), mkdir(rc.tmpDir); end
 
 currentFolder = fullfile(rc.analysisFolder, '6_ICA2');
 
@@ -106,6 +116,7 @@ else
     warning('Model for classification of components not specified. Using default model All_EEG.mat')
 end
 Mods = load(modelFile, 'convModel', 'featModel', 'normStruct', 'mWeights');
+Mods.modelFile = which(modelFile);
 
 
 %% ICA Classification
@@ -124,19 +135,25 @@ if strcmp(Mode,'class') % Parfor for DS only on Classification
     q = parallel.pool.DataQueue;
     afterEach(q, @(m) sc_handleMsg(progressfile, m));
 
-    parfor ds = 1:nDS
+    parfor (ds = 1:nDS, rc.useParallel)
         [~, dsn] = fileparts(infile{ds});
-        %try % Failsafe if failure, so  one ICA will not crash the whole processing
-            [tables_all{ds}, stats_all{ds}] = sc_5_ds_classify(infile, ds, rc, chan, ica, seg, ...
-                currentFolder, progressfile, Data_volume, Mode, Mods);
+        try % Failsafe if failure, so  one ICA will not crash the whole processing
+            if rc.eeg
+                [tables_all{ds}, stats_all{ds}] = sc_5_ds_classify(infile, ds, rc, chan, ica, seg, ...
+                    currentFolder, progressfile, Data_volume, Mode, Mods);
+            else
+                [tables_all{ds},stats_all{ds}] = sc_5_ds_classify_meg(infile, ds, rc, chan, ica, seg, ...
+                    currentFolder,progressfile, Data_volume, classification_threshold, Mode, Unsure_only, Validation, Verbosity, model_type);
+            end
             send(q, struct('ok', true,  'dsname', dsn, 'ds', ds, 'msg', ''));
-        % catch ME % Logging ICA Class Failed
-        %     failed(ds) = true;
-        %     where = '';
-        %     if ~isempty(ME.stack), where = sprintf(' [%s, line %d]', ME.stack(1).name, ME.stack(1).line); end
-        %     send(q, struct('ok', false, 'dsname', dsn, 'ds', ds, 'msg', [ME.message where]));
-        % end
+        catch ME % Logging ICA Class Failed
+            failed(ds) = true;
+            where = '';
+            if ~isempty(ME.stack), where = sprintf(' [%s, line %d]', ME.stack(1).name, ME.stack(1).line); end
+            send(q, struct('ok', false, 'dsname', dsn, 'ds', ds, 'msg', [ME.message where]));
+        end
     end
+    pause(0.5);
 else
     for ds = 1:nDS
         [tables_all{ds}, stats_all{ds}] = sc_5_ds_classify(infile, ds, rc, chan, ica, seg, ...

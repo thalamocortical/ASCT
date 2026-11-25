@@ -12,7 +12,8 @@ MULTAR_DEFAULT_VALUES = struct(...
     'sDTF',1,'sNDTF',1,'sSpect',1,'sCohs',1,'sdDTF',0,'sPDC',0,'sffDTF',0,...
     'sAR',0,'savefigs',0,...
     'userange',0,'timerangestart',0,'timerangeend',0,'pautoflag',0,...
-    'incl_instant',0);
+    'incl_instant',0,...
+    'diagnost',1);   % 1 = compute residual whiteness and stability diagnostics
 
 global dcolor   % color of graphs on diagonals
 %dcolor='g';
@@ -20,6 +21,8 @@ dcolor=[0.6 0.6 0.6];
 
 global FRQPMAX % number of points in frequency domain
 global FVL FVS
+global FNTSZ   % font size for channel names
+FNTSZ = 20;
 FRQPMAX = 100;
 FVL = { struct('f',@liczSpectrum,'sx','_spec','tt','Power spectrum','hn','pSpect'),...
         struct('f',@liczCohs,'sx','_cohs','tt','Coherences','hn','pCohs'),...
@@ -49,8 +52,8 @@ Nmap=zeros(256,3);
 %end
 
 global Plev_glb  % significance levels to use (if not empty)
-Plev_glb = [];
-% Plev_glb = [99.9 99 95 75];
+%Plev_glb = [];
+Plev_glb = [99.5 99 95 75];
 
 multar_values = MULTAR_DEFAULT_VALUES;
 

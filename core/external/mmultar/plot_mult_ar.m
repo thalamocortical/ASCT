@@ -6,11 +6,9 @@ function hnd=plot_mult_ar(hnd,s,h,a,mv,trial,maxtr,basev,savname,ARs)
 % chans=size(s,1);
 % frqpmax=size(s,3);
 
-%%% MD
-% set(0,'DefaultFigureVisible',mv.visible_fig);
-%%%
 opis=mv.opisy;
 
+ending='';
 if any([mv.sDTF mv.sSpect mv.sNDTF mv.sCohs mv.sdDTF mv.sPDC mv.sAR mv.sffDTF])
     if maxtr>1
         nmd=floor(log10(maxtr))+1;
@@ -57,9 +55,6 @@ for i=1:FUNS
         if (isfield(hnd,FVL{funcode}.hn)) && (ishandle(hnd.(FVL{funcode}.hn)))
             update_smultiplot(hnd.(FVL{funcode}.hn),datv,minv,maxv,{prfigname,FVL{funcode}.sx},bv,0,mv.pautoflag)
         else
-            %%% MD
-%             set(0,'DefaultFigureVisible',mv.visible_fig);
-            %%%
             hnd.(FVL{funcode}.hn)=smultiplot(datv,minv,maxv,FVL{funcode}.tt,{prfigname,FVL{funcode}.sx},opis,mv.savefigs,bv,0,mv.pautoflag);
         end
     end
@@ -83,4 +78,11 @@ if mv.sAR
     %eval(['ARs' ending '.H=h;']);
     %eval(['ARs' ending '.V=ARs0.V;']);
     save(savname,'-append',['ARs' ending]);
+end
+
+% --- store the goodness-of-fit diagnostics also when the AR coefficients
+%     themselves are not saved (ARs, if saved, already contains ARs.diag) ---
+if ~mv.sAR && isstruct(ARs) && isfield(ARs,'diag') && ~isempty(ARs.diag) && ~isempty(savname)
+    eval(['ARdiag' ending '=ARs.diag;']);
+    save(savname,'-append',['ARdiag' ending]);
 end

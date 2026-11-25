@@ -2,7 +2,7 @@
 % C CORRELCOV computes covariance matrices needed by 
 % C covariance and modificated covariance alorithms, which estimates
 % C Multivariate Autoregressive Model's coefficients.
-function [rleft_tot,rright_tot,r_tot]=countCorr(x,ip,iwhat)
+function [rleft_tot,rright_tot,r_tot]=countCorr(x,ip,iwhat,mv)
 
 sdt=size(x);
 m=sdt(1);
@@ -12,6 +12,42 @@ if length(sdt)>2
 else
     trials=1;
 end
+
+
+%-------------------------------
+if mv.norm0
+    mnd=mean(x,2);
+    lc=mv.chans;
+    for tt=1:trials
+        for cc=1:lc
+            x(cc,:,tt)=x(cc,:,tt)-mnd(cc,1,tt);
+        end
+    end
+end
+if mv.norm1
+    sdd=std(x,0,2);
+    lc=mv.chans;
+    for tt=1:trials
+        for cc=1:lc
+            x(cc,:,tt)=x(cc,:,tt)/sdd(cc,1,tt);
+        end
+    end
+end
+if mv.norm2 
+    if trials>1
+        mnd=mean(x,3);
+        % Loop bounds come from the actual size of x (m channels, n points),
+        % not from mv.chans / mv.recl: in short-time mode x is a single window
+        % shorter than mv.recl, and the old bound ran past the end of the array.
+        for nn=1:n
+            for cc=1:m
+                x(cc,nn,:)=x(cc,nn,:)/mnd(cc,nn,:);
+            end
+        end
+    end
+end
+%--------------------
+
 
 mip=m*ip;
 

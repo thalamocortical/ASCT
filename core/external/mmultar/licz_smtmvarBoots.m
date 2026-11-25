@@ -22,17 +22,13 @@ dlug=size(dat,2);
 trials=size(dat,3);
 
 METHODS=[1,2,4,8];
-if nargin<6
-    meth_num = 1;
-else
-    meth_num = METHODS(method);
-end
+meth_num = METHODS(method);
 
 if isempty(winlen)
     winlen = dlug-winnum*winshf;
     if winlen<=0
         disp('Illegal window length');
-        fun=[]; AR_tot=[]; H_tot=[];
+        fun=[]; AR_tot=[]; H_tot=[]; ARs=[];
         return
     end
 end
@@ -43,7 +39,7 @@ if isempty(winnum)
     winnum = floor((dlug-winlen)/winshf);
     if winnum<=0
         disp('Illegal number of windows');
-        fun=[]; AR_tot=[]; H_tot=[];
+        fun=[]; AR_tot=[]; H_tot=[]; ARs=[];
         return
     end
 end
@@ -55,6 +51,10 @@ if bootsiz>trials
     %mv.bootpool=bootsiz;
 end
 
+% For methods 1-4 the per-trial correlation matrices are computed once and the
+% resamples only average them.  The LWR lattice estimator (meth_num==8) has no
+% such representation, so its recursion is recomputed from the resampled trials
+% inside the loop - the same resampling, but considerably slower.
 fnumbs=getfunccalcnumbers(mv);
 fnumbs2=getfuncsavenumbers(mv);
 fnumbs=setdiff(union(fnumbs,fnumbs2),8); % 8 jest dla AR i H do poprawienia
@@ -75,27 +75,46 @@ else
 end
 fun = zeros(chans,chans,FRQPMAX,FUNS,length(plev),winnum);
 
+% --- goodness of fit of the model: residual whiteness and stability ---
+% (evaluated once per window for the model fitted to the whole window,
+%  not for the individual bootstrap resamples)
+docheck = ~isfield(mv,'diagnost') || mv.diagnost;
+if docheck
+    diagw=cell(1,winnum);
+end
+
 hnd=waitbar(0,'Processing windows...');
 for win=1:winnum
     sstart = (win-1)*winshf;
-    if meth_num<4
-        [rleft_tot,rright_tot,r_tot]=countCorrSav(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num);
+    if meth_num==8
+        rleft_tot=[]; rright_tot=[]; r_tot=[];
+    elseif meth_num<4
+        [rleft_tot,rright_tot,r_tot]=countCorrSav(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num,mv);
     else
         [rleft_tot,rright_tot,r_tot]=countCovSav(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num);
     end
     
+    if docheck
+        diagw{win}=mvar_diag_fit(dat(:,(sstart+1):(sstart+winlen),:),p,meth_num,mv,0,...
+            sprintf('window %d',win));
+    end
+
     for boot=1:bootnum
         ix=m_randint(1,bootnum,[1 bootsiz]);
         %ix=randi([1 bootsiz],[1,bootnum]);
-        rleft=mean(rleft_tot(:,:,ix),3);
-        rright=mean(rright_tot(:,:,ix),3);
-        r=mean(r_tot(:,:,ix),3);
-        
-        xres=linsolve(squeeze(rleft),squeeze(rright));
-        mip=chans*p;
-        Vr=DGEMM_symul('T','N',chans,chans,mip,-1,xres,mip,rright,mip,1,squeeze(r),chans);
-        AR=reshape(xres,[chans p chans]);
-        ARr=permute(AR,[3 1 2]);
+        if meth_num==8
+            [ARr,Vr]=mvar_estimate(dat(:,(sstart+1):(sstart+winlen),ix),p,meth_num,mv);
+        else
+            rleft=mean(rleft_tot(:,:,ix),3);
+            rright=mean(rright_tot(:,:,ix),3);
+            r=mean(r_tot(:,:,ix),3);
+
+            xres=linsolve(squeeze(rleft),squeeze(rright));
+            mip=chans*p;
+            Vr=DGEMM_symul('T','N',chans,chans,mip,-1,xres,mip,rright,mip,1,squeeze(r),chans);
+            AR=reshape(xres,[chans p chans]);
+            ARr=permute(AR,[3 1 2]);
+        end
 
         [s0,h0,a0]=mult_ar_calc(ARr,Vr,frqmin,frqmax,1./fs);
         for funcnum=1:FUNS
@@ -114,7 +133,7 @@ for win=1:winnum
     if mv.sAR
         AR_tot(:,:,:,:,win)=prctile(AR_boot,plev,4);
         H_tot(:,:,:,:,win)=prctile(H_boot,plev,4);
-        V_tot(:,:,:,win)=prctile(V_boot,plev,4);
+        V_tot(:,:,:,win)=prctile(V_boot,plev,3);
     end
     waitbar(win/winnum);
 end
@@ -122,3 +141,10 @@ close(hnd);
 ARs.coefs=AR_tot;
 ARs.H=H_tot;
 ARs.V=V_tot;
+
+if docheck
+    ARs.diag=[diagw{:}];
+    if mvar_diag_verbose(mv)
+        mvar_diag_report(ARs.diag,sprintf('%s p=%d,',mv.fname,p));
+    end
+end

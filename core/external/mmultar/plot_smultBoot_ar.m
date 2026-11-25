@@ -1,9 +1,7 @@
 function plot_smultBoot_ar(sbtfun,mv,basev)
 % plotting bootstrapped results for short-time mode
 % (C) Maciej Kaminski 2012 (GPLv3 http://www.gnu.org/licenses/gpl-3.0.txt)
-%%% MD
-set(0,'DefaultFigureVisible',mv.visible_fig);
-%%%
+
 sz=size(sbtfun);
 frqpmax=sz(3);
 

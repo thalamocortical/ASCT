@@ -6,6 +6,8 @@ cla;
 axm=[ax1,ax2,ax3];
 TITLE_ADD = {'lower percentile','median','upper percentile'};
 
+global Nmap
+
 sz=size(dat);
 rows=sz(1);
 cols=sz(2);
@@ -14,7 +16,11 @@ xcls=sz(5);
 datmat=zeros(rows*yrws+1,cols*xcls+1); % for pcolor
 [f_p,f_n,f_e]=fileparts(fname{1});
 if pautoflag~=0
-    gmax=find_wyn_maxv(squeeze(dat(:,:,:,3,:)))*pautoflag;
+    if pautoflag<0
+        gmax=-double(pautoflag);
+    else
+        gmax=find_wyn_maxv(squeeze(dat(:,:,:,3,:)))*double(pautoflag);
+    end
 else
     gmax=globmax;
 end
@@ -34,10 +40,12 @@ for grn=1:3
     if sum(sum(isnan(datmat)))>0
         line_color='black';
     else
-        line_color='white';
+        %line_color='white';  % zmiana
+        line_color='black';
     end
     datmat(:,end)=datmat(:,end-1); datmat(end,:)=datmat(end-1,:); aix=0.5;
-    pcolor(datmat); shading flat; axis ij; caxis([globmin gmax]);
+    %pcolor(datmat); shading flat; axis ij; caxis([globmin gmax]); % zmiana
+    pcolor(datmat); shading flat; axis ij; caxis([globmin gmax]); colormap(Nmap);
     line('Xdata',[0.5 cols*xcls+0.5]+aix,'Ydata',[rows*yrws+0.5 rows*yrws+0.5]+aix,'Color',line_color,'LineWidth',2); 
     line('Xdata',[0.5 0.5]+aix,'Ydata',[0.5 rows*yrws+0.5]+aix,'Color',line_color,'LineWidth',2); 
     for row=0:rows

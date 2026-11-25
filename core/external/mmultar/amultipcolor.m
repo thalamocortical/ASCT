@@ -2,6 +2,8 @@ function gmax=amultipcolor(ax,dat,globmin,globmax,stitle,fname,opisy,pautoflag,p
 %plot for short time matrix results, no bootstrap
 % (C) Maciej Kaminski 2012 (GPLv3 http://www.gnu.org/licenses/gpl-3.0.txt)
 
+global Nmap
+
 if ishandle(ax)
     %axes(ax);
 end
@@ -14,7 +16,11 @@ yrws=sz(3);
 xcls=sz(4);
 axis([0 rows 0 cols])
 if pautoflag~=0
-    gmax=find_wyn_maxv(dat)*pautoflag;
+    if pautoflag<0
+        gmax=-double(pautoflag);
+    else
+        gmax=find_wyn_maxv(dat)*double(pautoflag);
+    end
 else
     gmax=globmax;
 end
@@ -29,10 +35,12 @@ end
 if sum(sum(isnan(datmat)))>0
     line_color='black';
 else
-    line_color='white';
+    line_color='white';  % zmiana
+    %line_color='black';
 end
 datmat(:,end)=datmat(:,end-1); datmat(end,:)=datmat(end-1,:); aix=0.5;
-pcolor(datmat); shading flat; axis ij; caxis([globmin gmax]);
+pcolor(datmat); shading flat; axis ij; caxis([globmin gmax]); % zmiana
+%pcolor(datmat); shading flat; axis ij; caxis([globmin gmax]); colormap(Nmap);
 line('Xdata',[0.5 cols*xcls+0.5]+aix,'Ydata',[rows*yrws+0.5 rows*yrws+0.5]+aix,'Color',line_color,'LineWidth',2); 
 line('Xdata',[0.5 0.5]+aix,'Ydata',[0.5 rows*yrws+0.5]+aix,'Color',line_color,'LineWidth',2); 
 for row=0:rows

@@ -14,8 +14,8 @@ function num_peaks_in_window = sc_eyePeaks(sig_temp,Fs)
         catch
             current_window = sig_temp((windows-1)*5*Fs +1:end);
         end
-        [peaks,LOCS,width,prominence] = findpeaks(current_window,'MinPeakHeight',std(current_window)*5);
-        [peaks2,LOCS2,width2,prominence2] = findpeaks(-current_window,'MinPeakHeight',std(current_window)*5);
+        [peaks,~,~,~] = findpeaks(current_window,'MinPeakHeight',std(current_window)*5);
+        [peaks2,~,~,~] = findpeaks(-current_window,'MinPeakHeight',std(current_window)*5);
         peaks = [peaks peaks2]; % Concatenate both Peaks and throughts
         warn = warning('query','last');
         if ~isempty(warn)
